@@ -1,0 +1,1 @@
+add pinecone client, connect to frontend
