@@ -4,18 +4,32 @@ from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
-import pinecone
+from pinecone import Pinecone, ServerlessSpec
 from transcribe import TranscribeModel
 
 load_dotenv()
 
-pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENVIRONMENT"))
+pinecone_client = Pinecone(
+    api_key=os.getenv("PINECONE_API_KEY"),
+    environment=os.getenv("PINECONE_ENVIRONMENT")
+)
+
+index_name = os.getenv("PINECONE_INDEX_NAME")
+if index_name not in pinecone_client.list_indexes().names():
+    pinecone_client.create_index(
+        name=index_name,
+        dimension=1536,
+        metric='cosine',
+        spec=ServerlessSpec(
+            cloud="aws",  # Adjust cloud and region based on your setup
+            region=os.getenv("PINECONE_REGION", "us-west-2")
+        )
+    )
 
 embeddings = OpenAIEmbeddings()
 
 index_name = os.getenv("PINECONE_INDEX_NAME")
 vectorstore = PineconeVectorStore(index_name=os.getenv("PINECONE_INDEX_NAME"), embedding=embeddings)
-
 transcribe_model = TranscribeModel(model_size="small.en")
 
 def clean_text(text):
