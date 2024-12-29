@@ -4,10 +4,12 @@ from pathlib import Path
 import tempfile
 import whisper
 import subprocess
+from transformers import pipeline
 
 class TranscribeModel:
     def __init__(self, model_size="small.en"):
         self.model = whisper.load_model(model_size)
+        self.nli_model = pipeline("text-classification", model="roberta-large-mnli") # might needa finetune but okay for now
 
     def extract(self, vid, aud=None):
         """extracts audio from video"""
@@ -25,6 +27,25 @@ class TranscribeModel:
         """transcribes video using extracted audio"""
         result = self.model.transcribe(aud)
         return result['segments']
+    
+    def detect_contradictions(self, transcript):
+        """detects contradictions stated in videos (transcriptions) or written files"""
+        contradictions = []
+        num_statements = len(transcript)
+
+        for i in range(num_statements):
+            for j in range(i + 1, num_statements):
+                result = self.nli_model({
+                    "text": transcript[i]["text"],
+                    "text_pair": transcript[j]["text"]
+                })
+                if result[0]["label"] == "CONTRADICTION" and result[0]["score"] > 0.9:
+                    contradictions.append({
+                        "statement_1": transcript[i],
+                        "statement_2": transcript[j],
+                        "score": result[0]["score"]
+                    })
+        return contradictions
 
     def seg(self, segments):
         """seperates video into segments; each represents a sentence"""
