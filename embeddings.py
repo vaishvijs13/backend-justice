@@ -33,11 +33,10 @@ vectorstore = PineconeVectorStore(index_name=os.getenv("PINECONE_INDEX_NAME"), e
 transcribe_model = TranscribeModel(model_size="small.en")
 
 def clean_text(text):
-    text = text.strip()  # Remove leading and trailing whitespace
-    text = re.sub(r'\s+', ' ', text)  # Replace multiple spaces with a single space
-    text = re.sub(r'[^\w\s.,!?\'\"-]', '', text)  # Remove unwanted special characters
-    text = text.replace('\n', ' ')  # Replace newlines with spaces
-    text = text.lower()  # Convert to lowercase (optional, adjust based on needs)
+    text = text.strip()  # remove leading and trailing whitespace
+    text = re.sub(r'\s+', ' ', text)  # replace multiple spaces with a single space
+    text = re.sub(r'[^\w\s.,!?\'\"-]', '', text)  # remove unwanted special characters
+    text = text.replace('\n', ' ')  # replace newlines with spaces
     return text
 
 def split(text):
@@ -48,7 +47,7 @@ def split(text):
 def to_pinecone(text, video_filename):
     print(f"Adding text to Pinecone vector store for {video_filename}")
     chunks = split(text)
-    vectorstore.add_texts(texts=chunks, metadatas=[{'video_filename': video_filename}] * len(chunks))
+    vectorstore.add_texts(texts=chunks, metadatas=[{'video_filename': video_filename}] * len(chunks)) # might need to use local model instead of openAI bc of usage limits (still using openAI rn)
 
 def process(vid_path):
     clips = transcribe_model.process_video(vid_path)
